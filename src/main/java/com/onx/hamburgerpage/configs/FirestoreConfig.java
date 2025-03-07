@@ -30,17 +30,20 @@ public class FirestoreConfig {
     public Firestore initializeFirebaseApp() {
         try {
             InputStream serviceAccount = createServiceAccountInputStream();
-            FirestoreOptions firestoreOptions = FirestoreOptions.newBuilder()
-                    .setCredentials(GoogleCredentials.fromStream(serviceAccount))
-                    .setDatabaseId(urlDatabase)
-                    .build();
+            FirestoreOptions.Builder firestoreOptionsBuilder = FirestoreOptions.newBuilder()
+                    .setCredentials(GoogleCredentials.fromStream(serviceAccount));
 
+            // Solo establece el Database ID si no es "default"
+            if (!"default".equalsIgnoreCase(urlDatabase)) {
+                firestoreOptionsBuilder.setDatabaseId(urlDatabase);
+            }
+
+            FirestoreOptions firestoreOptions = firestoreOptionsBuilder.build();
             return firestoreOptions.getService();
         } catch (IOException | IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, FIREBASE_INITIALIZATION_ERROR, e);
         }
     }
-
     private InputStream createServiceAccountInputStream() {
         Gson gson = new Gson();
         JsonObject jsonObject = new JsonObject();

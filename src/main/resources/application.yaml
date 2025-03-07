@@ -2,6 +2,8 @@ server:
   servlet:
     context-path: /api/v1
   port: 8094
+app:
+  urldatabase: default
 
 firebase:
   type: ${TYPE}
