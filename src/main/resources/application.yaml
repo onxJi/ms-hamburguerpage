@@ -4,6 +4,7 @@ server:
   port: 8094
 app:
   urldatabase: default
+  secretJwt: ${SECRETJWT}
 
 firebase:
   type: ${TYPE}

@@ -1,9 +1,13 @@
 package com.onx.hamburgerpage.controllers;
 import com.onx.hamburgerpage.models.Usuario;
 import com.onx.hamburgerpage.services.AuthService;
+import com.onx.hamburgerpage.services.impl.FsUserDetailService;
 import com.onx.hamburgerpage.utils.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.concurrent.ExecutionException;
@@ -13,6 +17,9 @@ public class AuthController {
 
     @Autowired
     private AuthService authService;
+
+    @Autowired
+    private FsUserDetailService userDetailsService;
 
     @Autowired
     private JwtUtil jwtUtil;
@@ -25,13 +32,30 @@ public class AuthController {
     }
 
     // Inicio de sesión
-    @PostMapping("/login")
+    @PostMapping("/public/auth/login")
     public ResponseEntity<String> login(@RequestBody Usuario usuario) {
-        Usuario foundUser = authService.authenticate(usuario.getEmail(), usuario.getPasswordHash());
-        if (foundUser != null) {
-            String token = jwtUtil.generateToken(foundUser.getEmail());
-            return ResponseEntity.ok(token); // Devuelve el token JWT
+        try {
+            // Cargar el usuario desde Firestore
+            UserDetails userDetails = userDetailsService.loadUserByUsername(usuario.getEmail());
+
+            // Validar la contraseña
+            if (!passwordMatches(usuario.getPassword(), userDetails.getPassword())) {
+                return ResponseEntity.status(401).body("Credenciales inválidas");
+            }
+
+            // Generar el token JWT
+            String token = jwtUtil.generateToken(userDetails.getUsername());
+            return ResponseEntity.ok(token);
+        } catch (UsernameNotFoundException e) {
+            return ResponseEntity.status(401).body("Credenciales inválidas");
         }
-        return ResponseEntity.status(401).body("Credenciales inválidas");
+    }
+
+    @GetMapping("/hello")
+    public ResponseEntity<String> helloWorld() {
+        return ResponseEntity.ok("Hello World");
+    }
+    private boolean passwordMatches(String rawPassword, String encodedPassword) {
+        return new BCryptPasswordEncoder().matches(rawPassword, encodedPassword);
     }
 }

@@ -29,4 +29,6 @@ public class UsuarioRepository {
             throw new RuntimeException("Error al buscar usuario", e);
         }
     }
+
+
 }
